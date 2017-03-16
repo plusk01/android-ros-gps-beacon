@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.magicc.beacon.gps">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" package="com.magicc.beacon.gps">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
+        tools:replace="android:icon"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:allowBackup="true">
 
         <activity
-            android:name="Gps"
+            android:name="com.magicc.beacon.gps.GPSBeaconActivity"
             android:label="@string/app_name"
             android:launchMode="standard">
             <intent-filter>
@@ -22,6 +26,13 @@
 
         <!-- The way that the ROS master is chosen (could by bypassed) -->
         <activity android:name="org.ros.android.MasterChooser" />
+
+        <!-- Not exactly sure... -->
+        <service android:name="org.ros.android.NodeMainExecutorService" >
+            <intent-filter>
+                <action android:name="org.ros.android.NodeMainExecutorService" />
+            </intent-filter>
+        </service>
 
     </application>
 </manifest>
