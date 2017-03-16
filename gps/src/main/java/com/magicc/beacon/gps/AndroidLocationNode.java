@@ -31,18 +31,19 @@ public class AndroidLocationNode extends AbstractNodeMain {
     /** Set the name of the node */
     @Override
     public GraphName getDefaultNodeName() {
-
         return GraphName.of(this.nodeName);
     }
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
-
         fixPublisher = connectedNode
                 .newPublisher("~fix", sensor_msgs.NavSatFix._TYPE);
     }
 
     public void updateLocation(Location location) {
+        // To prevent crashing when orientation changes
+        if (fixPublisher == null) return;
+
         //TODO: fill out rest of nav information, and also publish velocity and time_reference
 //		sensor_msgs.NavSatStatus.
         sensor_msgs.NavSatFix msg = fixPublisher.newMessage();

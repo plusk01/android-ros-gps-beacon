@@ -8,6 +8,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.TextView;
 
 import org.ros.address.InetAddressFactory;
 import org.ros.android.RosActivity;
@@ -19,6 +20,7 @@ public class GPSBeaconActivity extends RosActivity
     private static final String NOTIFICATION_KEY = "GPSBeacon";
     protected static final String TAG = GPSBeaconActivity.class.getCanonicalName();
     private AndroidLocationNode locationNode;
+    private int fixCount = 0; // how many GPS fixes since start
 
     public GPSBeaconActivity() {
         super(NOTIFICATION_KEY, NOTIFICATION_KEY);
@@ -73,13 +75,34 @@ public class GPSBeaconActivity extends RosActivity
         };
 
         // Register the listener with the Location Manager to receive location updates
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 500, 0, locationListener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 0, locationListener);
     }
 
     /** send the location service message (hopefully GPS) to the ROS node to be published. */
-    protected void makeUseOfNewLocation(Location location) {
+    protected void makeUseOfNewLocation(final Location location) {
         if (locationNode != null) {
+
+            // http://stackoverflow.com/a/5162096/2392520
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // display latitude
+                    TextView txtLat = (TextView) findViewById(R.id.lat);
+                    txtLat.setText("Lat: " + String.valueOf(location.getLatitude()));
+
+                    // display longitude
+                    TextView txtLon = (TextView) findViewById(R.id.lon);
+                    txtLon.setText("Lon: " + String.valueOf(location.getLongitude()));
+
+                    // fix count
+                    fixCount += 1;
+                    TextView txtFixCount = (TextView) findViewById(R.id.fixCount);
+                    txtFixCount.setText("GPS Fix Count: " + String.valueOf(fixCount));
+                }
+            });
+
+            // publish GPS fix
             locationNode.updateLocation(location);
         }
     }
@@ -92,7 +115,21 @@ public class GPSBeaconActivity extends RosActivity
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host, getMasterUri());
 
         // Get a 'unique' name of the phone
-        String deviceName = getPhoneName();
+        final String deviceName = getPhoneName();
+
+        // http://stackoverflow.com/a/5162096/2392520
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Let user know the phone's (node) name
+                TextView nodeName = (TextView) findViewById(R.id.nodeName);
+                nodeName.setText("ROS Node: " + deviceName);
+
+                // Let the user know the ROS Master URI
+                TextView rosUri = (TextView) findViewById(R.id.rosURI);
+                rosUri.setText("ROS Master URI: " + getMasterUri().getHost());
+            }
+        });
 
         // Execute the location node, named as the phone name
         locationNode = new AndroidLocationNode(deviceName);
