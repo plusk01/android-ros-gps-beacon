@@ -18,17 +18,28 @@ import android.location.Location;
 public class AndroidLocationNode extends AbstractNodeMain {
 
     private Publisher<sensor_msgs.NavSatFix> fixPublisher;
+    private String nodeName;
 
+    public AndroidLocationNode(String nodeName) {
+        if (nodeName != null && !nodeName.isEmpty()) {
+            this.nodeName = nodeName;
+        } else {
+            this.nodeName = "android";
+        }
+    }
+
+    /** Set the name of the node */
     @Override
     public GraphName getDefaultNodeName() {
-        return GraphName.of("android_location");
+
+        return GraphName.of(this.nodeName);
     }
 
     @Override
     public void onStart(final ConnectedNode connectedNode) {
 
         fixPublisher = connectedNode
-                .newPublisher("fix", sensor_msgs.NavSatFix._TYPE);
+                .newPublisher("~fix", sensor_msgs.NavSatFix._TYPE);
     }
 
     public void updateLocation(Location location) {

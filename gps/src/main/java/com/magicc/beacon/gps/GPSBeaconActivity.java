@@ -1,10 +1,12 @@
 package com.magicc.beacon.gps;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.ros.address.InetAddressFactory;
@@ -29,10 +31,11 @@ public class GPSBeaconActivity extends RosActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
-
     }
 
+    /** Find out what location services are available. You may have to configure your location
+     * services in the settings of your phone to allow high precision location measurements.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -74,6 +77,7 @@ public class GPSBeaconActivity extends RosActivity
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
     }
 
+    /** send the location service message (hopefully GPS) to the ROS node to be published. */
     protected void makeUseOfNewLocation(Location location) {
         if (locationNode != null) {
             locationNode.updateLocation(location);
@@ -87,8 +91,40 @@ public class GPSBeaconActivity extends RosActivity
         String host = InetAddressFactory.newNonLoopback().getHostName();
         NodeConfiguration nodeConfiguration = NodeConfiguration.newPublic(host, getMasterUri());
 
-        //Execute the location node
-        locationNode = new AndroidLocationNode();
+        // Get a 'unique' name of the phone
+        String deviceName = getPhoneName();
+
+        // Execute the location node, named as the phone name
+        locationNode = new AndroidLocationNode(deviceName);
         nodeMainExecutor.execute(locationNode, nodeConfiguration);
+    }
+
+    protected String getPhoneName() {
+        // https://github.com/kakopappa/getdevcicename/blob/master/app/src/main/java/aruna/com/getdevcicename/MainActivity.java
+
+        // Try to get the user defined phone name
+        String deviceName = Settings.System.getString(getContentResolver(), "device_name");
+        Log.v("MainActivity", "system device_name: " + deviceName);
+
+        // If that didn't work, get the bluetooth device name
+        if (deviceName == null || deviceName.isEmpty()) {
+            BluetoothAdapter myDevice = BluetoothAdapter.getDefaultAdapter();
+            deviceName = myDevice.getName();
+            Log.v("MainActivity", "bluetooth device_name: " + deviceName);
+        }
+
+        // If that didn't work, just get the model name
+        if (deviceName == null || deviceName.isEmpty()) {
+            deviceName = android.os.Build.MODEL;
+            Log.v("MainActivity", "Build.MODEL: " + deviceName);
+        }
+
+        // If all else fails, just call it "android." Name collisions will abound...
+        if (deviceName == null || deviceName.isEmpty()) {
+            deviceName = "android";
+        }
+
+        // return a lower-cased, no-spaced device name
+        return deviceName.replaceAll(" ", "_").toLowerCase();
     }
 }
